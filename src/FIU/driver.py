@@ -43,6 +43,10 @@ class FIU(object):
         else:
             return True
     
+    def close(self) -> None:
+        self.set_open_circuit_fault_all(False)
+        self.interface.close()
+
     def configure(self, shared_dmm: bool) -> None:
         """Set whether the system is using a shared DMM across multiple FIUs."""
         self._sharedDMM = shared_dmm

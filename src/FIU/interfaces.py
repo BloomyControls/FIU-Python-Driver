@@ -7,6 +7,11 @@ class CommInterface(object):
     def __init__(self, resource: str):
         self.resource = resource
 
+    def open(self):
+        pass
+
+    def close(self):
+        pass
 class RS485(CommInterface):
     def __init__(self, port: str, port_settings: DefaultPortSettings = DefaultPortSettings()) -> None:
         self.resource = port
@@ -30,7 +35,6 @@ class RS485(CommInterface):
     def close(self) -> None:
         """Closes a connection to the FIU."""
         #connect all channels before closing
-        self.set_open_circuit_fault_all(False)
         self.serial.close()
     
     
