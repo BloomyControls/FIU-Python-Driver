@@ -1,3 +1,4 @@
+from asyncore import write
 import sys
 from .fiu_types import *
 from .interfaces import *
@@ -46,6 +47,7 @@ class FIU(object):
     def close(self) -> None:
         self.set_open_circuit_fault_all(False)
         self.interface.close()
+        print(f"Connection with FIU Module IDs {self.module_IDs} on {self.resource} has been successfully closed")
 
     def configure(self, shared_dmm: bool) -> None:
         """Set whether the system is using a shared DMM across multiple FIUs."""
@@ -87,7 +89,9 @@ class FIU(object):
             new_state = FIUState.CONNECTED
         #set open circuit state for all channels on all modules
         for box in self.module_IDs:
-            self.interface.write_cmd(f"{cmd_char}{box}99")
+            write_buff = f"{cmd_char}{box}99"
+            #print(write_buff)
+            self.interface.write_cmd(write_buff)
         #Update the state in StateManager
         self._state_mgr.set_all_state(self.module_IDs, new_state)
 
@@ -159,12 +163,12 @@ class FIU(object):
             status = self.interface.write_cmd(f"S{mod_id}")
             for i in range(24):
                 stat = status[i]
-                if   stat == 'C': system_status.add(FIUState.CONNECTED.name)
-                elif stat == 'D': system_status.add(FIUState.DISCONNECTED.name)
-                elif stat == 'V': system_status.add(FIUState.VOLT_MEASUREMENT.name)
-                elif stat == 'I': system_status.add(FIUState.CURR_MEASUREMENT.name)
-                elif stat == 'F': system_status.add(FIUState.FAULT_TO_GND.name)
-                else:             system_status.add(FIUState.RESET.name)
+                if   stat == 'C': system_status.append(FIUState.CONNECTED.name)
+                elif stat == 'D': system_status.append(FIUState.DISCONNECTED.name)
+                elif stat == 'V': system_status.append(FIUState.VOLT_MEASUREMENT.name)
+                elif stat == 'I': system_status.append(FIUState.CURR_MEASUREMENT.name)
+                elif stat == 'F': system_status.append(FIUState.FAULT_TO_GND.name)
+                else:             system_status.append(FIUState.RESET.name)
             return system_status
         else:
             raise FIUException(5075)

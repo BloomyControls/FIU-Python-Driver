@@ -1,18 +1,18 @@
 from curses import baudrate
 from dataclasses import dataclass
 import serial
-from enum import Enum
+from enum import IntEnum
 
 class FIUException(Exception):
-    def __init__(self, code: int, **kwargs):
+    def __init__(self, code: int, *args):
         self.code = code
-        if code ==   5002: self.msg == "FIU Module\nInvalid Response to cmd %s\n%s" % (kwargs[0], "Device Not Found" if kwargs[1] is None else kwargs[1])
-        elif code == 5003: self.msg == "%s\nSource CMD: %s" (kwargs[0], kwargs[1])
-        elif code == 5004: self.msg == kwargs[0]
+        if code ==   5002: self.msg == "FIU Module\nInvalid Response to cmd %s\n%s" % (args[0], "Device Not Found" if args[1] is None else kwargs[1])
+        elif code == 5003: self.msg == "%s\nSource CMD: %s" (args[0], args[1])
+        elif code == 5004: self.msg == args[0]
         elif code == 5010: self.msg == "Unable to set state. There is another channel currently using the DMM or fault in this module."
         elif code == 5051: self.msg == "The channel input is out of range"
         elif code == 5075: self.msg == "Module input is out of range."
-        else: self.msg == kwargs[0]
+        else: self.msg == args[0]
     def __str__(self):
         return "FIU Module Error\n Code %d \n%s" % (self.code, self.msg)
 
@@ -34,7 +34,7 @@ class RelayCount:
     K4 : int = 0
     K5 : int = 0
 
-class FIUState(Enum):
+class FIUState(IntEnum):
     RESET = 0
     CONNECTED = 1
     DISCONNECTED = 2
@@ -94,11 +94,11 @@ class StateManager(object):
         chan = channel - 1
         module_states = self._get_module_state(mod_id)
         if(FIUState.VOLT_MEASUREMENT <= next_state <= FIUState.FAULT_TO_GND):
-            check = list[bool]
+            check = []
             i = 0
             for state in module_states:
                 if(i is not chan):
-                    check.add(state in range(FIUState.VOLT_MEASUREMENT, FIUState.FAULT_TO_GND + 1))
+                    check.append(state in range(FIUState.VOLT_MEASUREMENT, FIUState.FAULT_TO_GND + 1))
             if any(check):
                 return False
             else:
@@ -110,10 +110,10 @@ class StateManager(object):
         """Validates transition to the next state is valid when the FIU is in shared DMM mode"""
         all_mod_states = self._get_all_state()
         if(FIUState.VOLT_MEASUREMENT <= next_state <= FIUState.FAULT_TO_GND):
-            check = list[bool]
+            check = []
             for mod in all_mod_states:
                 for state in mod:
-                    check.add(state in range(FIUState.VOLT_MEASUREMENT, FIUState.FAULT_TO_GND + 1))
+                    check.append(state in range(FIUState.VOLT_MEASUREMENT, FIUState.FAULT_TO_GND + 1))
             #
             if any(check): 
                 return False

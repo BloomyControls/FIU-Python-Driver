@@ -1,5 +1,5 @@
 from time import sleep
-from serial import rs485
+from serial import Serial
 from .fiu_types import *
 
 class CommInterface(object):
@@ -12,6 +12,7 @@ class CommInterface(object):
 
     def close(self):
         pass
+    
 class RS485(CommInterface):
     def __init__(self, port: str, port_settings: DefaultPortSettings = DefaultPortSettings()) -> None:
         self.resource = port
@@ -21,7 +22,7 @@ class RS485(CommInterface):
         """Opens an RS-485 connection to the FIU."""
         #Set port settings for the interface class from custom dataclass with port settings 
         #according to FIU communication specification
-        self.serial = rs485.RS485()
+        self.serial = Serial()
         self.serial.baudrate = self._port_cfg.baud_rate
         self.serial.bytesize = self._port_cfg.byte_size
         self.serial.parity   = self._port_cfg.parity
@@ -43,7 +44,7 @@ class RS485(CommInterface):
         #CRC is calculated from the sum of the message's u8 byte array modulo
         encoded_msg_sum = sum(bytes(msg, 'utf-8'))
         #Take only the hex value characters from the hex string  
-        CRC = hex(encoded_msg_sum % 256)[2:]
+        CRC = hex(encoded_msg_sum % 256)[2:].upper()
         #add end line constant for the termination character(s)
         return msg + CRC + '\r'
 
@@ -54,14 +55,15 @@ class RS485(CommInterface):
         self.serial.reset_output_buffer()
         #add checksum and termination to the message, then write command out to device 
         msg = self.__add_CRC(msg)
-        self.serial.write(bytes(msg, 'utf-8'))
+        self.serial.write(msg.encode('utf-8'))
         #wait 100 ms for response
-        sleep(0.0100)
-        ret_msg = self.serial.read(self.serial.in_waiting)
+        sleep(0.1)
+        ret_msg = self.serial.read(self.serial.in_waiting).decode('utf-8')
         return self.__check_return_msg(msg, ret_msg)
 
     def __check_return_msg(self, sent_cmd: str, readbuff: str) -> str:
         """Parses the returned message buffer based on the return code"""
+        #print(sent_cmd, readbuff)
         return_msg = readbuff[0]
         if return_msg == '0':
             #Success - No Data
@@ -72,7 +74,7 @@ class RS485(CommInterface):
             return readbuff[1:1+(len(readbuff)-4)]
         elif return_msg == '2':
             #Error msg
-            return FIUException(5003, readbuff, sent_cmd)
+            return FIUException(5003, [readbuff, sent_cmd])
         elif return_msg == '3':
             #Error Data
             #Error returned when attempting to short multiple channels to the bus
@@ -80,4 +82,4 @@ class RS485(CommInterface):
             return FIUException(5004, readbuff[1:1+(len(readbuff)-4)])
         else:
             #Invalid Response to CMD
-            return FIUException(5002, sent_cmd, readbuff)
+            return FIUException(5002, [sent_cmd, readbuff])
