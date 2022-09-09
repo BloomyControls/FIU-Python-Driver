@@ -1,8 +1,8 @@
 [project]
-name = "fiu_driver"
-version = "0.2.0"
+name = "bloomy_fiu_driver"
+version = "0.2.3"
 authors = [{ name = "Mikhail Kharitonov", email = "mikhail.kharitonov@bloomy.com"}]
-description= "Python interface to the Bloomy Fault Insertion Unit"
+description= "Python driver package to communicate with the Bloomy Fault Insertion Unit over RS-485 Protocol"
 readme = "README.md"
 
 [metadata]

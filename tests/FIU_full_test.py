@@ -1,6 +1,6 @@
 import sys
 sys.path.append("src")
-from FIU import FIU, RS485
+from fiu import FIU, RS485
 
 def print_states(rel_states: list) -> None:
     for i in range(0, 12):
@@ -9,9 +9,8 @@ def print_states(rel_states: list) -> None:
 if __name__ == "__main__":
     resource = sys.argv[1]
     mod = 0
-    test_inf = RS485(resource)
     end = True
-    with FIU([mod], test_inf) as fiu:
+    with FIU([mod], resource) as fiu:
         print_states(fiu.relay_state(mod))
         while end:
             o = int(input(f"""
@@ -68,6 +67,7 @@ if __name__ == "__main__":
                 fiu.interlock_override(mod, True if state==1 else False)
             else:
                 end = False
-            print_states(fiu.relay_state(mod))
+            if(end):
+                print_states(fiu.relay_state(mod))
 
             

@@ -7,7 +7,7 @@ class FIU(object):
        and functionality mirroring the functions and capabilities of the 
        Bloomy FIU LabVIEW Driver"""
     
-    def __init__(self, mod_ids: list, comm_interface: CommInterface) -> None:
+    def __init__(self, mod_ids: list, comm_resource: str) -> None:
         """Constructor for 
         """
         self.module_IDs = []
@@ -25,24 +25,27 @@ class FIU(object):
 
         #Initialize port resource name and create an object for the pyserial RS485 serial subclass 
         self._sharedDMM = False
-        self.resource = comm_interface.resource
-        self.interface = comm_interface
-        self.interface.open()
-        print(f"Connection to Fault Insertion Unit Module IDs: {self.module_IDs} established on port {self.resource}")
+        self.resource = comm_resource
+        self.interface = RS485(comm_resource, DefaultPortSettings())
 
 
     def __enter__(self):
+        self.connect()
         return self
 
     def __exit__(self, exc_type, exc_value, traceback): 
-        self.close()
+        self.disconnect()
         print(f"Closed connection with FIU on {self.resource}. All channel relays have been reconnected")
         if exc_type is not None:
             print("\nExecution type:", exc_type)
             print("\nExecution value:", exc_value)
             print("\nTraceback:", traceback)
     
-    def close(self) -> None:
+    def connect(self) -> None:
+        self.interface.open()
+        print(f"Connection to Fault Insertion Unit Module IDs: {self.module_IDs} established on port {self.resource}")
+    
+    def disconnect(self) -> None:
         self.set_open_circuit_fault_all(False)
         self.interface.close()
         print(f"Connection with FIU Module IDs {self.module_IDs} on {self.resource} has been successfully closed")
