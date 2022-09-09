@@ -2,10 +2,9 @@ import sys
 sys.path.append("src")
 from FIU import FIU, RS485
 
-def print_states(rel_states: list[str]) -> None:
+def print_states(rel_states: list) -> None:
     for i in range(0, 12):
         print(f"Channel {i+1}:\t{rel_states[i]}\tChannel {i+13}:\t{rel_states[i+12]}")
-    print(f"Channel 25:\t{rel_states[23]}")
 
 if __name__ == "__main__":
     resource = sys.argv[1]
@@ -22,13 +21,13 @@ if __name__ == "__main__":
             3 : Set Short Circuit Fault
             4 : Set Voltage Measurement
             5 : Set Current Measurement
-            6 : Relay Contact Cycle Count
+            6 : Get Relay States (no action)
             7 : Software Version
             8 : Get Interlock State
             9 : Interlock Override
             Enter 0 or other number to close the connection with FIU: Mod IDs {fiu.module_IDs} on port {fiu.resource}
             Action: """))
-
+            
             if o == 1:
                 channel = -1
                 state = -1
@@ -36,7 +35,7 @@ if __name__ == "__main__":
                     channel = int(input("Set Channel (1-25): "))
                     state   = int(input("Enter 1 to Disconnect, 2 to Connect: "))
                 fiu.set_open_circuit_fault(mod, channel, True if(state == 1) else False)
-            elif o ==2:
+            elif o == 2:
                 state = -1
                 while((state < 1 or state > 2)):
                     state = int(input("Enter 1 to Disconnect All, 2 to Connect All: "))
@@ -57,11 +56,7 @@ if __name__ == "__main__":
                     channel = int(input("Set Current Measurement on Channel (1-25): "))
                 fiu.set_current_measurement(mod, channel)
             elif o ==6:
-                channel = -1
-                while((channel < 1 or channel > 25)):
-                    channel = int(input("Get Relay Contact Cycle count for Channel (1-25): "))
-                counts = fiu.relay_contact_cycle_count(mod, channel)
-                print(f"K1: {counts.K1}\nK2: {counts.K2}\nK3: {counts.K3}\nK4: {counts.K4}\nK5: {counts.K5}")
+                pass
             elif o ==7:
                 print(f"FIU: {mod} on {resource} is running software version: {fiu.software_version(mod)}")
             elif o ==8:

@@ -1,6 +1,24 @@
-[build-system]
-requires = [
-    "setuptools>=42",
-    "wheel"
+[project]
+name = "fiu_driver"
+version = "0.2.0"
+authors = [{ name = "Mikhail Kharitonov", email = "mikhail.kharitonov@bloomy.com"}]
+description= "Python interface to the Bloomy Fault Insertion Unit"
+readme = "README.md"
+
+[metadata]
+
+[project_urls]
+"Homepage" = "https://github.com/BloomyControls/FIU-Python-Driver"
+"Bug Tracker" = "https://github.com/BloomyControls/FIU-Python-Driver/issues"
+classifiers= [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent"
 ]
+[options]
+python_requires = ">=3.7"
+dependencies =["pyserial"]
+
+[build-system]
+requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"

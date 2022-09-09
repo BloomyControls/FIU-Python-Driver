@@ -1,5 +1,3 @@
-from asyncore import write
-import sys
 from .fiu_types import *
 from .interfaces import *
 
@@ -9,7 +7,7 @@ class FIU(object):
        and functionality mirroring the functions and capabilities of the 
        Bloomy FIU LabVIEW Driver"""
     
-    def __init__(self, mod_ids: list[int], comm_interface: CommInterface) -> None:
+    def __init__(self, mod_ids: list, comm_interface: CommInterface) -> None:
         """Constructor for 
         """
         self.module_IDs = []
@@ -23,7 +21,7 @@ class FIU(object):
 
         #Initialize the state manager and set all channels on all modules to be in disconnected state
         self._state_mgr = StateManager(self.module_IDs)
-        self._state_mgr.set_all_state(self.module_IDs, FIUState.DISCONNECTED)
+        self._state_mgr.set_all_state(self.module_IDs, FIUState.CONNECTED)
 
         #Initialize port resource name and create an object for the pyserial RS485 serial subclass 
         self._sharedDMM = False
@@ -36,13 +34,13 @@ class FIU(object):
     def __enter__(self):
         return self
 
-    def __exit__(self, exc_type, exc_val, tb):
+    def __exit__(self, exc_type, exc_value, traceback): 
         self.close()
+        print(f"Closed connection with FIU on {self.resource}. All channel relays have been reconnected")
         if exc_type is not None:
-            sys.tracebacklimit.print_exception(exc_type, exc_val, tb)
-            return False
-        else:
-            return True
+            print("\nExecution type:", exc_type)
+            print("\nExecution value:", exc_value)
+            print("\nTraceback:", traceback)
     
     def close(self) -> None:
         self.set_open_circuit_fault_all(False)
@@ -53,8 +51,8 @@ class FIU(object):
         """Set whether the system is using a shared DMM across multiple FIUs."""
         self._sharedDMM = shared_dmm
 
-    def set_open_circuit_fault(self, mod_id, channel, enable_disable: bool) ->None:
-        """Enable (disconnect) or disable (connect) an open circuit fault at a specified channel."""
+    def set_open_circuit_fault(self, mod_id, channel, enable_disable: bool) -> None:
+        """Enable (True = disconnect) or disable (False = connect) an open circuit fault at a specified channel."""
         if(self.__valid_module(mod_id) and self.__valid_channel(channel)):
             if enable_disable:
                 #Disconnected state
@@ -78,7 +76,7 @@ class FIU(object):
             raise FIUException(5051)
 
     def set_open_circuit_fault_all(self, enable_disable: bool) -> None:
-        """Enable (disconnect) or disable (connect) open circuit faults at all channels in the system."""
+        """Enable (True = disconnect) or disable (False = connect) open circuit faults at all channels in the system."""
         if enable_disable:
             #Disconnected state
             cmd_char = "D"
@@ -112,7 +110,7 @@ class FIU(object):
                 #update the channel's state in the state manager
                 self._state_mgr.set_channel_state(mod_id, channel, FIUState.FAULT_TO_GND)
             else:
-                raise FIUException(5010)
+                raise FIUException(5010, channel, FIUState.FAULT_TO_GND.name)
         else:
             raise FIUException(5051)
 
@@ -132,7 +130,7 @@ class FIU(object):
                 #update the channel's state in the state manager
                 self._state_mgr.set_channel_state(mod_id, channel, FIUState.VOLT_MEASUREMENT)
             else:
-                raise FIUException(5010)
+                raise FIUException(5010, channel, FIUState.VOLT_MEASUREMENT.name)
         else:
             raise FIUException(5051)
 
@@ -152,11 +150,11 @@ class FIU(object):
                 #update the channel's state in the state manager
                 self._state_mgr.set_channel_state(mod_id, channel, FIUState.CURR_MEASUREMENT)
             else:
-                raise FIUException(5010)
+                raise FIUException(5010, channel, FIUState.CURR_MEASUREMENT.name)
         else:
             raise FIUException(5051)
 
-    def relay_state(self, mod_id: int) -> list[str]:
+    def relay_state(self, mod_id: int) -> list:
         """Returns the state for every channel in the FIU system."""
         if(self.__valid_module(mod_id)):
             system_status = [] 
@@ -173,21 +171,22 @@ class FIU(object):
         else:
             raise FIUException(5075)
 
-    def relay_contact_cycle_count(self, mod_id: int, channel: int):
-        """Returns the number of cycles the relays on the specified channel have experienced."""
-        if(self.__valid_module(mod_id) and self.__valid_channel(channel)):
-            cmd = f"N{mod_id}{channel:02d}"
-            ret_data = self.interface.write_cmd(cmd)
-            relay_counts = RelayCount(
-                K1 = int(ret_data[0:7]),
-                K2 = int(ret_data[8:15]),
-                K3 = int(ret_data[16:23]),
-                K4 = int(ret_data[24:31]),
-                K5 = int(ret_data[32:])
-            )
-            return relay_counts
-        else:
-            raise FIUException(5075)
+    # Deprecated from LabVIEW Driver
+    # def relay_contact_cycle_count(self, mod_id: int, channel: int):
+    #     """Returns the number of cycles the relays on the specified channel have experienced."""
+    #     if(self.__valid_module(mod_id) and self.__valid_channel(channel)):
+    #         cmd = f"N{mod_id}{channel:02d}"
+    #         ret_data = self.interface.write_cmd(cmd)
+    #         relay_counts = RelayCount(
+    #             K1 = int(ret_data[0:7]),
+    #             K2 = int(ret_data[8:15]),
+    #             K3 = int(ret_data[16:23]),
+    #             K4 = int(ret_data[24:31]),
+    #             K5 = int(ret_data[32:])
+    #         )
+    #         return relay_counts
+    #     else:
+    #         raise FIUException(5075)
 
     def software_version(self, mod_id: int) -> str:
         """Returns the current version of the software running on the FIU."""
