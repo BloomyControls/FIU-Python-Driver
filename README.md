@@ -1,4 +1,4 @@
-# Bloomy Fault Insertion Unit Python Driver v0.2.3
+# Bloomy Fault Insertion Unit Python Driver v1.0.0
 This package enables RS485 communication to the Bloomy Fault Insertion Unit through a PC's serial ports. 
 
 The Fault Insertion Unit (FIU) is designed to be used in conjunction with the BS1200 to generate open faults and short to ground faults. It also has switching that allows precisions current and voltage measurements to be taken using an external DMM. 
