@@ -7,13 +7,33 @@ The Fault Insertion Unit (FIU) is configurable to communicate using RS-485 or CA
 In order to use the RS-485 protocol, the box must be set to 0-7. For use with CAN bus, the box must be set to 8-15. 
 The FIU Python Driver currently supports RS-485 only. CAN interface support development is pending.
 
-## Installation
-To install, open a command line in the dist directory and use the command 'pip install bloomy_fiu_driver-0.2.2-py3-none-any.whl'
+## Build and Installation
+### Requirements
 Requires Python version 3.7 or greater
 Package is compatible with Windows and Unix platforms. 
 Tested on Windows 10 build 19043 64-bit, using Python 3.10.5
 Tested on Ubuntu 18.04 WSL 1, using Python 3.7.4, 3.7.14
 
+### Installation
+To begin installation the fiu driver package, open a command line terminal in the directory that the v1.0.0 wheel distribution release was saved. 
+To install the package run the command: 
+
+Windows:    ```pip install bloomy_fiu_driver-1.0.0-py3-none-any.whl```
+
+Linux:      ```pip3 install bloomy_fiu_driver-1.0.0-py3-none-any.whl```
+
+If providing a full path to the .whl file, the terminal may be opened in any directory.
+
+### Building the Project
+Alternative to installing from the official release, the driver package may be built from the source code using native python build tools.
+Open the terminal in the top level folder of the repository, where pyproject.toml is located. 
+Create a .whl binary distribution, and source tarball in the project's /dist/ directory with the command:
+
+Windows:
+```python -m build```
+
+Linux:
+```python3 -m build```
 ## Use Instructions
 With the fiu driver package installed to the python environment, use one of the following import statements the access the driver:
 
