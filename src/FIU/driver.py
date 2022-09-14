@@ -14,14 +14,13 @@ class FIU(object):
         #make sure all Box IDs are in the range required for RS-485 for the Fault Insertion Unit
         for id in mod_ids:
             if id in range(0, 8):
-                #print(id)
                 self.module_IDs.append(id)
             else: raise IndexError(f"Invalid Module ID: {id}\nFIU Module IDs must be in range 0-7 for RS-485 communication")
         self.module_IDs.sort()
 
         #Initialize the state manager and set all channels on all modules to be in disconnected state
-        self._state_mgr = StateManager(self.module_IDs)
-        self._state_mgr.set_all_state(self.module_IDs, FIUState.CONNECTED)
+        self.__state_mgr = StateManager(self.module_IDs)
+        self.__state_mgr.set_all_state(self.module_IDs, FIUState.CONNECTED)
 
         #Initialize port resource name and create an object for the pyserial RS485 serial subclass 
         self._sharedDMM = False
@@ -54,7 +53,7 @@ class FIU(object):
         """Set whether the system is using a shared DMM across multiple FIUs."""
         self._sharedDMM = shared_dmm
 
-    def set_open_circuit_fault(self, mod_id, channel, enable_disable: bool) -> None:
+    def set_open_circuit_fault(self, mod_id: int, channel: int, enable_disable: bool = True) -> None:
         """Enable (True = disconnect) or disable (False = connect) an open circuit fault at a specified channel."""
         if(self.__valid_module(mod_id) and self.__valid_channel(channel)):
             if enable_disable:
@@ -66,19 +65,19 @@ class FIU(object):
                 cmd_char = "C"
                 new_state = FIUState.CONNECTED
             #Check to see if the new open circuit state is a valid transition
-            safe = self._state_mgr.check_shared_DMM_transition(new_state) if self._sharedDMM else self._state_mgr.check_transition(mod_id, channel, new_state)
-            if(safe):
+            if(self.__check_transition(new_state, mod_id, channel)):
                 #construct the SCPI command to write to the FIU
                 cmd = f"{cmd_char}{mod_id}{channel:02d}"
                 self.interface.write_cmd(cmd)
                 #update the channel's state in the state manager
-                self._state_mgr.set_channel_state(mod_id, channel, new_state)
+                self.__state_mgr.set_channel_state(mod_id, channel, new_state)
             else:
                 raise FIUException(5010)
         else:
             raise FIUException(5051)
 
-    def set_open_circuit_fault_all(self, enable_disable: bool) -> None:
+
+    def set_open_circuit_fault_all(self, enable_disable: bool = True) -> None:
         """Enable (True = disconnect) or disable (False = connect) open circuit faults at all channels in the system."""
         if enable_disable:
             #Disconnected state
@@ -90,28 +89,36 @@ class FIU(object):
             new_state = FIUState.CONNECTED
         #set open circuit state for all channels on all modules
         for box in self.module_IDs:
-            write_buff = f"{cmd_char}{box}99"
-            #print(write_buff)
-            self.interface.write_cmd(write_buff)
+            cmd = f"{cmd_char}{box}99"
+            self.interface.write_cmd(cmd)
         #Update the state in StateManager
-        self._state_mgr.set_all_state(self.module_IDs, new_state)
+        self.__state_mgr.set_all_state(self.module_IDs, new_state)
 
+    def set_channel_connected(self, mod_id: int, channel: int) -> None:
+        """Dedicated method to set open circuit fault state of the provided channel to CONNECTED"""
+        if(self.__valid_module(mod_id) and self.__valid_channel(channel)):
+                cmd = f"C{mod_id}{channel:02d}"
+                self.interface.write_cmd(cmd)
+                self.__state_mgr.set_channel_state(mod_id, channel, FIUState.CONNECTED)
+
+    def connect_channels_all(self) -> None:
+            """Dedicated method to set all channels on every FIU on serial bus to CONNECTED state"""
+            for box in self.module_IDs:
+                cmd = f"C{box}99"
+                self.interface.write_cmd(cmd)
+            self.__state_mgr.set_all_state(self.module_IDs, FIUState.CONNECTED)
 
     def set_short_circuit_fault(self, mod_id, channel):
         """Sets a fault to ground at the specified channel. 
         (Only one channel in the system can be set to ground fault at a time.)"""
         if(self.__valid_module(mod_id) and self.__valid_channel(channel)):
             #Check to see if the fault state at given channel is a valid transition
-            if self._sharedDMM:
-                safe = self._state_mgr.check_shared_DMM_transition(FIUState.FAULT_TO_GND)  
-            else:
-                safe = self._state_mgr.check_transition(mod_id, channel, FIUState.FAULT_TO_GND)
-            if(safe):
+            if(self.__check_transition(FIUState.FAULT_TO_GND, mod_id, channel)):
                 #construct the SCPI command to write to the FIU
                 cmd = f"F{mod_id}{channel:02d}"
                 self.interface.write_cmd(cmd)
                 #update the channel's state in the state manager
-                self._state_mgr.set_channel_state(mod_id, channel, FIUState.FAULT_TO_GND)
+                self.__state_mgr.set_channel_state(mod_id, channel, FIUState.FAULT_TO_GND)
             else:
                 raise FIUException(5010, channel, FIUState.FAULT_TO_GND.name)
         else:
@@ -122,16 +129,12 @@ class FIU(object):
         (Only one channel in the system can be set to measurement mode at a time.)"""
         if(self.__valid_module(mod_id) and self.__valid_channel(channel)):
             #Check to see if another channel is set to voltage measurement mode
-            if self._sharedDMM:
-                safe = self._state_mgr.check_shared_DMM_transition(FIUState.VOLT_MEASUREMENT)  
-            else:
-                safe = self._state_mgr.check_transition(mod_id, channel, FIUState.VOLT_MEASUREMENT)
-            if(safe):
+            if(self.__check_transition(FIUState.VOLT_MEASUREMENT, mod_id, channel)):
                 #construct the SCPI command to write to the FIU
                 cmd = f"V{mod_id}{channel:02d}"
                 self.interface.write_cmd(cmd)
                 #update the channel's state in the state manager
-                self._state_mgr.set_channel_state(mod_id, channel, FIUState.VOLT_MEASUREMENT)
+                self.__state_mgr.set_channel_state(mod_id, channel, FIUState.VOLT_MEASUREMENT)
             else:
                 raise FIUException(5010, channel, FIUState.VOLT_MEASUREMENT.name)
         else:
@@ -142,16 +145,12 @@ class FIU(object):
         (Only one channel in the system can be set to measurement mode at a time.)"""
         if(self.__valid_module(mod_id) and self.__valid_channel(channel)):
             #Check to see if another channel is set to current measurement
-            if self._sharedDMM:
-                safe = self._state_mgr.check_shared_DMM_transition(FIUState.CURR_MEASUREMENT)  
-            else:
-                safe = self._state_mgr.check_transition(mod_id, channel, FIUState.CURR_MEASUREMENT)
-            if(safe):
+            if(self.__check_transition(FIUState.CURR_MEASUREMENT, mod_id, channel)):
                 #construct the SCPI command to write to the FIU
                 cmd = f"I{mod_id}{channel:02d}"
                 self.interface.write_cmd(cmd)
                 #update the channel's state in the state manager
-                self._state_mgr.set_channel_state(mod_id, channel, FIUState.CURR_MEASUREMENT)
+                self.__state_mgr.set_channel_state(mod_id, channel, FIUState.CURR_MEASUREMENT)
             else:
                 raise FIUException(5010, channel, FIUState.CURR_MEASUREMENT.name)
         else:
@@ -219,3 +218,10 @@ class FIU(object):
     def __valid_channel(self, channel) -> bool:
         """Ensures entered channel number is within valid range of 1-24"""
         return True if (channel in range (1, 25)) else False
+
+    def __check_transition(self, new_state, mod_id, channel) -> bool:
+        """Asks the state manager to check if it is safe to transition to the new state, given the configuration of the FIU Bus"""
+        if self._sharedDMM:
+            return self.__state_mgr.check_shared_DMM_transition(new_state) 
+        else: 
+            return self.__state_mgr.check_transition(mod_id, channel, new_state)

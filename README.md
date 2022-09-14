@@ -1,4 +1,4 @@
-# Bloomy Fault Insertion Unit Python Driver v1.0.0
+# Bloomy Fault Insertion Unit Python Driver v1.1.0
 This package enables RS485 communication to the Bloomy Fault Insertion Unit through a PC's serial ports. 
 
 The Fault Insertion Unit (FIU) is designed to be used in conjunction with the BS1200 to generate open faults and short to ground faults. It also has switching that allows precisions current and voltage measurements to be taken using an external DMM. 
@@ -15,12 +15,12 @@ Tested on Windows 10 build 19043 64-bit, using Python 3.10.5
 Tested on Ubuntu 18.04 WSL 1, using Python 3.7.4, 3.7.14
 
 ### Installation
-To begin installation the fiu driver package, open a command line terminal in the directory that the v1.0.0 wheel distribution release was saved. 
+To begin installation the fiu driver package, open a command line terminal in the directory that the v1.1.0 wheel distribution release was saved. 
 To install the package run the command: 
 
-Windows:    ```pip install bloomy_fiu_driver-1.0.0-py3-none-any.whl```
+Windows:    ```pip install bloomy_fiu_driver-1.1.0-py3-none-any.whl```
 
-Linux:      ```pip3 install bloomy_fiu_driver-1.0.0-py3-none-any.whl```
+Linux:      ```pip3 install bloomy_fiu_driver-1.1.0-py3-none-any.whl```
 
 If providing a full path to the .whl file, the terminal may be opened in any directory.
 
@@ -76,8 +76,10 @@ The FIU driver class provides the following public methods to interact with the 
 | connect                    | N/A                                                                                                                                                                               | Instructs the driver's serial RS-485 interface to establish a connection<br>with the com resource                                                                                                                                                                     |
 | disconnect                 | N/A                                                                                                                                                                               | Sets all channels on all FIU modules to CONNECTED state before instructing <br>the RS-485 serial interface to close the connection with the FIU                                                                                                                       |
 | configure                  | shared_dmm (bool): value setting Shared DMM status                                                                                                                                | Set whether the system is using a shared DMM across multiple FIUs.                                                                                                                                                                                                    |
-| set_open_circuit_fault     | mod_id (int): FIU module ID<br>channel (int): Channel to set open circuit state for (1-24)<br>enable_disable (bool): True to enable (DISCONNECTED) or False to disable (CONNECT)  | Enable (disconnect) or disable (connect) an open circuit fault at a specified channel.                                                                                                                                                                                |
-| set_open_circuit_fault_all | mod_id (int): FIU module ID<br>enable_disable (bool): True to enable (DISCONNECTED) or False to disable (CONNECT)                                                                 | Enable (disconnect) or disable (connect) open circuit faults at all channels in the system.                                                                                                                                                                           |
+| set_open_circuit_fault     | mod_id (int): FIU module ID<br>channel (int): Channel to set open circuit state for (1-24)<br>enable_disable (bool): True to enable (DISCONNECTED) or False to disable (CONNECT)  | Enable (disconnect) or disable (connect) an open circuit fault at a specified. Defaults to DISCONNECT channel.                                                                                                                                                                                |
+| set_open_circuit_fault_all | enable_disable (bool): True to enable (DISCONNECTED) or False to disable (CONNECT)                                                                 | Enable (disconnect) or disable (connect) open circuit faults at all channels in the system. Defaults to DISCONNECT                                                                                                                                                                           |
+| set_channel_connected      | mod_id (int): FIU module ID<br>channel (int): Channel to connect for (1-24)| Connect the specified channel.                                                                                                                                                                                |
+| connect_channels_all | N/A                                                                 | Connects all channels in the system.                                                                                                                                                                           |
 | set_short_circuit_fault    | mod_id (int): FIU module ID<br>channel (int): Channel to set short circuit fault on (1-24)                                                                                        | Sets a fault to ground at the specified channel. (Only one channel in the system can be set to ground fault at a time.)                                                                                                                                               |
 | set_voltage_measurement    | mod_id (int): FIU Module ID<br>channel (int): Channel to set DMM voltage measurement on (1-24)                                                                                    | Sets the specified channel to voltage mode for DMM cell voltage measurement. (Only one channel in the system can be set to measurement mode at a time.)                                                                                                               |
 | set_current_measurement    | mod_id (int): FIU Module ID<br>channel (int): Channel to set DMM current measurement on (1-24)                                                                                    | Sets the specified channel to current mode for DMM bypass current measurement. (Only one channel in the system can be set to measurement mode at a time.)                                                                                                             |

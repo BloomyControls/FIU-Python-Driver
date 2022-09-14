@@ -63,7 +63,6 @@ class RS485(CommInterface):
 
     def __check_return_msg(self, sent_cmd: str, readbuff: str) -> str:
         """Parses the returned message buffer based on the return code"""
-        #print(sent_cmd, readbuff)
         return_msg = readbuff[0]
         if return_msg == '0':
             #Success - No Data
