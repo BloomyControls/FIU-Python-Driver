@@ -76,7 +76,7 @@ if __name__ == "__main__":
             #     while((state < 0 or state > 1)):
             #         state = int(input("Enter 0 to set Shared DMM status inactive, 1 to set active: "))
             #         fiu.configure(state == 1)            
-            # else:
+            else:
                 end = False
             if(end):
                 print_states(fiu.relay_state(mod))

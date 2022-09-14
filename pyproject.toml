@@ -4,8 +4,7 @@ version = "1.1.0"
 authors = [{ name = "Mikhail Kharitonov", email = "mikhail.kharitonov@bloomy.com"}]
 description= "Python driver package to communicate with the Bloomy Fault Insertion Unit over RS-485 Protocol"
 readme = "README.md"
-
-[metadata]
+dependencies = ["pyserial==3.5"]
 
 [project_urls]
 "Homepage" = "https://github.com/BloomyControls/FIU-Python-Driver"
@@ -17,8 +16,7 @@ classifiers= [
 ]
 [options]
 python_requires = ">=3.7"
-dependencies =["pyserial"]
 
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
